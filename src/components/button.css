@@ -1,0 +1,43 @@
+.add-button{
+    font-size: 28px;
+    border-radius: 39px;
+    border: 0px;
+    color: white;
+    height: 40px;
+    width: 45px;
+    background-image: radial-gradient(circle at 5% 2%, rgb(128, 232, 168), rgb(26, 120, 57));
+    box-shadow: 2px 2px 9px rgb(65, 102, 162);
+    transition: all 0.3s ease;
+}
+
+.add-button:hover{
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+.add-button:active{
+    background-image: radial-gradient(circle at 5% 2%, rgb(90, 200, 150), rgb(20, 100, 40));
+    transform: scale(1.0);
+}
+
+.delete-button{
+    font-size: 28px;
+    border-radius: 39px;
+    border: 0px;
+    color: white;
+    height: 40px;
+    width: 45px;
+    background-image: radial-gradient(circle at 5% 2%, red, rgb(180, 5, 5));
+    box-shadow: 2px 2px 9px rgb(65, 102, 162);
+    margin: 2px 10px 30px 310px;
+}
+
+.delete-button:hover{
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+.delete-button:active{
+    transform: scale(1.1);
+    background-color: rgb(147, 6, 6);
+}

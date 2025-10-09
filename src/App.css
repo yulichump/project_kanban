@@ -1,0 +1,90 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20px;
+    background: rgb(222, 222, 248);
+    transition: all 0.6s ease;
+  }
+
+.wrapper {
+  display: flex;
+    margin: 35px;
+}
+
+.column-wrapper {
+    flex:1;
+    margin: 15px;
+    max-height: 80vh; /* Ограничиваем максимальную высоту */
+
+}
+
+.column-title {
+    background-color: rgb(202, 200, 250);
+    padding: 10px 20px 15px;
+    position: fixed;
+    font-size: 30px;
+    border-radius: 20px;
+    position: relative;
+    margin: 5px;
+    box-shadow: 3px 3px 7px rgb(53, 34, 85);
+    height: 80px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.column-title p {
+  margin: 0;
+  font-weight: bold;
+  color: #333;
+}
+
+.column-title button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.column {
+    margin: 5px;
+    position: relative;
+    height: 650px;
+    border-radius: 5%;
+    border-radius: 20px;
+    background-color: rgb(209, 227, 239);
+    box-shadow: 3px 3px 7px rgb(53, 34, 85);
+    padding: 10px;
+    overflow-y: auto; /* Добавляем скролл при переполнении */
+    min-height: 200px;
+    max-height: calc(80vh - 70px); /* Вычитаем высоту заголовка */
+}
+
+.task {
+    margin: 10px;
+    padding: 10px;
+    width: 355px;
+    height: 200px;
+    background-color: rgb(225, 233, 239);
+    border-radius: 5%;
+    box-shadow: 2px 2px 9px rgb(65, 102, 162);
+    transition: all 0.3s ease;
+    transform: translateY(0);
+    break-inside: avoid; /* Задачи не разрываются при скролле */
+
+}
+
+.task:active{
+    transform: translateY(-1px);
+    transform: scale(0.9);
+    opacity: 0.7;
+    transform: rotate(3deg);
+}
