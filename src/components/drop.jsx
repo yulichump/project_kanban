@@ -1,80 +1,113 @@
-// hooks/useDragAndDrop.js
-import { useState } from 'react';
+// 🎯 ТОЧНАЯ СТРУКТУРА - КОПИРУЙ И РАБОТАЙ!
+import React, { useState } from 'react';
 
-export function useDragAndDrop(initialTasks, onTasksUpdate) {
-  const [draggedTask, setDraggedTask] = useState(null);
-  const [dragOverColumn, setDragOverColumn] = useState(null);
+const DragDropComponent = () => {
+  // === 1. ДАННЫЕ ===
+  const [tasks, setTasks] = useState({
+    todo: [{id: 1, text: 'Задача 1'}],
+    progress: [],
+    done: []
+  });
+  const [draggedItem, setDraggedItem] = useState(null);
 
-  // Начало перетаскивания
-  const handleDragStart = (e, taskId, fromColumn) => {
-    setDraggedTask({ id: taskId, fromColumn });
-    e.dataTransfer.setData('text/plain', taskId);
-    e.currentTarget.style.opacity = '0.5';
+  // === 2. ФУНКЦИИ - 3 ОСНОВНЫЕ ===
+  
+  // Функция 1: НАЧАЛО перетаскивания
+  const handleDragStart = (e, task, fromColumn) => {
+    setDraggedItem({...task, fromColumn});
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  // Завершение перетаскивания
-  const handleDragEnd = (e) => {
-    e.currentTarget.style.opacity = '1';
-    setDraggedTask(null);
-    setDragOverColumn(null);
-  };
-
-  // Разрешаем дроп
+  // Функция 2: ПЕНОС над областью
   const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.preventDefault(); // ⚡ ВАЖНО!
   };
 
-  // Когда заходим в колонку
-  const handleDragEnter = (columnId) => {
-    setDragOverColumn(columnId);
-  };
-
-  // Когда выходим из колонки
-  const handleDragLeave = () => {
-    setDragOverColumn(null);
-  };
-
-  // Обработка дропа
+  // Функция 3: БРОСАЕМ элемент
   const handleDrop = (e, toColumn) => {
     e.preventDefault();
     
-    if (!draggedTask) return;
-
-    const taskId = draggedTask.id;
-    const fromColumn = draggedTask.fromColumn;
-
-    // Если перемещаем в другую колонку
-    if (fromColumn !== toColumn) {
-      // Находим задачу которую перемещаем
-      const taskToMove = initialTasks[fromColumn].find(t => t.id == taskId);
+    if (!draggedItem) return;
+    
+    setTasks(prev => {
+      // УДАЛИТЬ из старой колонки
+      const newTasks = {...prev};
+      newTasks[draggedItem.fromColumn] = 
+        newTasks[draggedItem.fromColumn].filter(t => t.id !== draggedItem.id);
       
-      // Удаляем из старой колонки
-      const newFromColumn = initialTasks[fromColumn].filter(t => t.id != taskId);
+      // ДОБАВИТЬ в новую колонку
+      newTasks[toColumn] = [...newTasks[toColumn], {
+        ...draggedItem,
+        fromColumn: undefined
+      }];
       
-      // Добавляем в новую колонку
-      const newToColumn = [...initialTasks[toColumn], taskToMove];
-
-      // Обновляем задачи
-      onTasksUpdate({
-        ...initialTasks,
-        [fromColumn]: newFromColumn,
-        [toColumn]: newToColumn
-      });
-    }
-
-    setDraggedTask(null);
-    setDragOverColumn(null);
+      return newTasks;
+    });
+    
+    setDraggedItem(null);
   };
 
-  return {
-    draggedTask,
-    dragOverColumn,
-    handleDragStart,
-    handleDragEnd,
-    handleDragOver,
-    handleDragEnter,
-    handleDragLeave,
-    handleDrop
-  };
-}
+  // === 3. ИНТЕРФЕЙС ===
+  return (
+    <div className="columns">
+      {/* Колонка 1 */}
+      <div 
+        className="column"
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, 'todo')}
+      >
+        <h3>To Do</h3>
+        {tasks.todo.map(task => (
+          <div
+            key={task.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, task, 'todo')}
+            className="task"
+          >
+            {task.text}
+          </div>
+        ))}
+      </div>
+      
+      {/* Колонка 2 */}  
+      <div 
+        className="column"
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, 'progress')}
+      >
+        <h3>In Progress</h3>
+        {tasks.progress.map(task => (
+          <div
+            key={task.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, task, 'progress')}
+            className="task"
+          >
+            {task.text}
+          </div>
+        ))}
+      </div>
+      
+      {/* Колонка 3 */}
+      <div 
+        className="column" 
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, 'done')}
+      >
+        <h3>Done</h3>
+        {tasks.done.map(task => (
+          <div
+            key={task.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, task, 'done')}
+            className="task"
+          >
+            {task.text}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default DragDropComponent;

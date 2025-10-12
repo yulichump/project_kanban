@@ -1,41 +1,71 @@
 import { useState, useEffect } from 'react';
 import './App.css';
+import './components/button.css'
+import { useEditTask } from './components/editTask';
 
 function App() {
   const [tasks, setTasks] = useState({
-    todo: [
-      { id: 1, content: 'Тестовая задача' }
-    ],
+    todo: [],
     progress: [],
     done: []
   });
 
-  const [draggedTask, setDraggedTask] = useState(null);
-  const [editingTask, setEditingTask] = useState(null); // ID задачи в режиме редактирования
-  const [editText, setEditText] = useState(''); // Текст для редактирования
+   // Добавляем состояние для отслеживания первой загрузки
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Загрузка из localStorage при монтировании
   useEffect(() => {
-    const savedTasks = localStorage.getItem('kanban-tasks');
-    if(savedTasks){
-      const parsed = JSON.parse(savedTasks);
-      setTasks(parsed);
+    try {
+      const savedTasks = localStorage.getItem('kanban-tasks');
+      if (savedTasks && savedTasks !== 'null' && savedTasks !== 'undefined') {
+        const parsed = JSON.parse(savedTasks);
+        setTasks(parsed);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки:', error);
     }
+    
+    setIsInitialLoad(false);
   }, []);
 
+  // Сохранение в localStorage при изменении задач
   useEffect(() => {
-    localStorage.setItem('kanban-tasks', JSON.stringify(tasks));
-  }, [tasks]);
+    // Не сохраняем при первой загрузке, чтобы не перезаписать данные из localStorage
+    if (isInitialLoad) {
+      return;
+    }
+    try {
+      localStorage.setItem('kanban-tasks', JSON.stringify(tasks));
+    } catch (error) {
+      console.error('❌ Ошибка сохранения:', error);
+    }
+  }, [tasks, isInitialLoad]); // Добавляем isInitialLoad в зависимости
 
+   // Используем кастомные хуки
+  const {
+    editingTask,
+    editText,
+    setEditText,
+    startEditing,
+    saveEdit,
+    cancelEdit
+  } = useEditTask();
+
+  // Проверьте, что при добавлении задачи структура сохраняется
   const addTask = (columnId) => {
     const newTask = {
       id: Date.now(),
       content: 'Новая задача'
     };
 
-    setTasks(prevTasks => ({
-      ...prevTasks,
-      [columnId]: [...prevTasks[columnId], newTask]
-    }));
+    setTasks(prevTasks => {
+      const newTasks = {
+        ...prevTasks,
+        [columnId]: [...prevTasks[columnId], newTask]
+      };
+      console.log('Новые задачи после добавления:', newTasks);
+      return newTasks;
+    });
   };
 
   // Функция удаления задачи
@@ -46,151 +76,66 @@ function App() {
     }));
   };
 
-  // Начало редактирования
-  const startEditing = (taskId, currentContent, columnId) => {
-    setEditingTask({ id: taskId, columnId });
-    setEditText(currentContent);
-  };
-
-  // Сохранение изменений
-  const saveEdit = () => {
-    if (!editingTask) return;
-
-    setTasks(prevTasks => ({
-      ...prevTasks,
-      [editingTask.columnId]: prevTasks[editingTask.columnId].map(task =>
-        task.id === editingTask.id ? { ...task, content: editText } : task
-      )
-    }));
-
-    setEditingTask(null);
-    setEditText('');
-  };
-
-  // Отмена редактирования
-  const cancelEdit = () => {
-    setEditingTask(null);
-    setEditText('');
-  };
-
-  // Обработка нажатия Enter при редактировании
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      saveEdit();
-    } else if (e.key === 'Escape') {
-      cancelEdit();
-    }
-  };
-
-  const handleDragStart = (e, taskId, fromColumn) => {
-    // Не позволяем перетаскивать задачу в режиме редактирования
-    if (editingTask && editingTask.id === taskId) return;
-    
-    setDraggedTask({ id: taskId, fromColumn });
-    e.dataTransfer.setData('text/plain', taskId);
-  };
-
-  const handleDragEnd = (e) => {
-    setDraggedTask(null);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e, toColumn) => {
-    e.preventDefault();
-    
-    if (!draggedTask) return;
-
-    const taskId = draggedTask.id;
-    const fromColumn = draggedTask.fromColumn;
-
-    if (fromColumn !== toColumn) {
-      setTasks(prevTasks => {
-        const taskToMove = prevTasks[fromColumn].find(t => t.id == taskId);
-        const newFromColumn = prevTasks[fromColumn].filter(t => t.id != taskId);
-        const newToColumn = [...prevTasks[toColumn], taskToMove];
-
-        return {
-          ...prevTasks,
-          [fromColumn]: newFromColumn,
-          [toColumn]: newToColumn
-        };
-      });
-    }
-
-    setDraggedTask(null);
-  };
-
   // Компонент для отображения задачи
-  const Task = ({ task, columnId }) => {
-    const isEditing = editingTask && editingTask.id === task.id;
-
-    return (
-      <div 
-        className="task"
-        draggable={!isEditing} // Запрещаем перетаскивание при редактировании
-        onDragStart={(e) => handleDragStart(e, task.id, columnId)}
-        onDragEnd={handleDragEnd}
-      >
-        {isEditing ? (
-          // Режим редактирования
-          <div className="edit-mode">
-            <input
-              type="text"
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="edit-input"
-              autoFocus
-            />
-            <div className="edit-buttons">
-              <button onClick={saveEdit} className="save-button" title="Сохранить">
-                ✓
-              </button>
-              <button onClick={cancelEdit} className="cancel-button" title="Отменить">
-                ×
-              </button>
-            </div>
+const Task = ({ task, columnId }) => {
+  const isEditing = editingTask && editingTask.id === task.id;
+  return (
+    <div 
+      className="task"
+    >
+      {isEditing ? (
+        // Режим редактирования - здесь перетаскивание запрещено
+        <div className="edit-mode">
+          <input
+            type="text"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            className="edit-input"
+            autoFocus
+          />
+          <div className="edit-buttons">
+            <button onClick={() => saveEdit(setTasks)} className="save-button" title='Сохранить'>✓</button>
+            <button onClick={() => cancelEdit(setTasks)} className="cancel-button" title="Отменить">
+              ×
+            </button>
           </div>
-        ) : (
-          // Режим просмотра
-          <>
-            <span 
-              className="task-content"
-              onDoubleClick={() => startEditing(task.id, task.content, columnId)}
+        </div>
+      ) : (
+        // Режим просмотра - ВАЖНО: добавляем pointer-events: none для внутренних элементов
+        <div className="task-view" style={{pointerEvents: 'none'}}>
+          <span 
+            className="task-content"
+            onDoubleClick={() => startEditing(task.id, task.content, columnId)}
+          >
+            {task.content}
+          </span>
+          <div className="task-actions">
+            <button 
+              className="edit-button"
+              onClick={() => startEditing(task.id, task.content, columnId)}
+              title="Редактировать"
+              style={{pointerEvents: 'auto'}} // Разрешаем события только для кнопок
+            >✎
+            </button>
+            <button 
+              className="delete-button"
+              onClick={() => deleteTask(task.id, columnId)}
+              title="Удалить задачу"
+              style={{pointerEvents: 'auto'}} // Разрешаем события только для кнопок
             >
-              {task.content}
-            </span>
-            <div className="task-actions">
-              <button 
-                className="edit-button"
-                onClick={() => startEditing(task.id, task.content, columnId)}
-                title="Редактировать"
-              >
-                ✎
-              </button>
-              <button 
-                className="delete-button"
-                onClick={() => deleteTask(task.id, columnId)}
-                title="Удалить задачу"
-              >
-                ×
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className='wrapper'>
       <div 
-        className="column-wrapper"
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, 'todo')}
+        className='column-wrapper'
       >
         <div className="column-title">
           <p>TO DO</p>
@@ -202,16 +147,13 @@ function App() {
           ))}
         </div>
       </div>
-
-      <div 
-        className="column-wrapper"
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, 'progress')}
+     <div 
+        className='column-wrapper'
       >
         <div className="column-title">
           <p>PROGRESS</p>
         </div>
-        <div className="column">
+        <div className="column"        >
           {tasks.progress.map(task => (
             <Task key={task.id} task={task} columnId="progress" />
           ))}
@@ -219,9 +161,7 @@ function App() {
       </div>
 
       <div 
-        className="column-wrapper"
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, 'done')}
+        className='column-wrapper'
       >
         <div className="column-title">
           <p>DONE</p>
