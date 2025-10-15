@@ -15,16 +15,11 @@ function App() {
 
   // Загрузка из localStorage при монтировании
   useEffect(() => {
-    try {
       const savedTasks = localStorage.getItem('kanban-tasks');
       if (savedTasks && savedTasks !== 'null' && savedTasks !== 'undefined') {
         const parsed = JSON.parse(savedTasks);
         setTasks(parsed);
       }
-    } catch (error) {
-      console.error('❌ Ошибка загрузки:', error);
-    }
-    
     setIsInitialLoad(false);
   }, []);
 
@@ -34,14 +29,9 @@ function App() {
     if (isInitialLoad) {
       return;
     }
-    try {
       localStorage.setItem('kanban-tasks', JSON.stringify(tasks));
-    } catch (error) {
-      console.error('❌ Ошибка сохранения:', error);
-    }
   }, [tasks, isInitialLoad]); // Добавляем isInitialLoad в зависимости
 
-   // Используем кастомные хуки
   const {
     editingTask,
     editText,
@@ -101,7 +91,6 @@ const Task = ({ task, columnId }) => {
           </div>
         </div>
       ) : (
-        // Режим просмотра - ВАЖНО: добавляем pointer-events: none для внутренних элементов
         <div className="task-view" style={{pointerEvents: 'none'}}>
           <span 
             className="task-content"
@@ -114,14 +103,14 @@ const Task = ({ task, columnId }) => {
               className="edit-button"
               onClick={() => startEditing(task.id, task.content, columnId)}
               title="Редактировать"
-              style={{pointerEvents: 'auto'}} // Разрешаем события только для кнопок
+              style={{pointerEvents: 'auto'}} 
             >✎
             </button>
             <button 
               className="delete-button"
               onClick={() => deleteTask(task.id, columnId)}
               title="Удалить задачу"
-              style={{pointerEvents: 'auto'}} // Разрешаем события только для кнопок
+              style={{pointerEvents: 'auto'}}
             >
               ×
             </button>
